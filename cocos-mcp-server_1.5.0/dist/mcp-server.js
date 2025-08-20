@@ -115,6 +115,40 @@ class MCPServer {
             throw error;
         }
     }
+    /**
+     * Transform JSON Schema to be compatible with MCP clients that don't support
+     * oneOf/anyOf/allOf at the top level
+     * @param {Object} schema - Original JSON Schema
+     * @returns {Object} - Compatible schema
+     */
+    transformSchemaForCompatibility(schema) {
+        if (!schema || typeof schema !== 'object') {
+            return schema;
+        }
+
+        // Create a copy to avoid modifying the original
+        const compatibleSchema = { ...schema };
+
+        // Check if schema has top-level oneOf/anyOf/allOf
+        const hasCompositeKeywords = ['oneOf', 'anyOf', 'allOf'].some(keyword =>
+            compatibleSchema.hasOwnProperty(keyword)
+        );
+
+        if (hasCompositeKeywords) {
+            console.log(`[MCPServer] Transforming schema with composite keywords for compatibility`);
+
+            // Remove composite keywords from top level
+            delete compatibleSchema.oneOf;
+            delete compatibleSchema.anyOf;
+            delete compatibleSchema.allOf;
+
+            // Keep basic schema structure (type, properties, required)
+            // The conditional validation will be handled at runtime in tool execution
+        }
+
+        return compatibleSchema;
+    }
+
     setupTools() {
         this.toolsList = [];
         // 如果没有启用工具配置，返回所有工具
@@ -125,7 +159,7 @@ class MCPServer {
                     this.toolsList.push({
                         name: `${category}_${tool.name}`,
                         description: tool.description,
-                        inputSchema: tool.inputSchema
+                        inputSchema: this.transformSchemaForCompatibility(tool.inputSchema)
                     });
                 }
             }
@@ -141,7 +175,7 @@ class MCPServer {
                         this.toolsList.push({
                             name: toolName,
                             description: tool.description,
-                            inputSchema: tool.inputSchema
+                            inputSchema: this.transformSchemaForCompatibility(tool.inputSchema)
                         });
                     }
                 }

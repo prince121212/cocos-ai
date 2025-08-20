@@ -177,9 +177,40 @@ class PreferencesTools {
                 throw new Error(`Unknown tool: ${toolName}`);
         }
     }
+    /**
+     * Validate required parameters for specific actions
+     * @param {Object} args - Arguments to validate
+     * @param {string} action - Action being performed
+     * @returns {Object|null} - Error object if validation fails, null if valid
+     */
+    validateActionParameters(args, action) {
+        const requiredParams = {
+            'get_config': ['category'],
+            'set_config': ['category', 'path', 'value'],
+            'reset_config': ['category'],
+            'search_settings': ['keyword'],
+            'validate_backup': ['backupData']
+        };
+
+        const required = requiredParams[action];
+        if (!required) return null; // No specific requirements
+
+        for (const param of required) {
+            if (args[param] === undefined || args[param] === null) {
+                return { success: false, error: `Missing required parameter: ${param} for action: ${action}` };
+            }
+        }
+        return null; // Valid
+    }
+
     // New consolidated handlers
     async handlePreferencesManage(args) {
         const { action } = args;
+
+        // Validate required parameters
+        const validationError = this.validateActionParameters(args, action);
+        if (validationError) return validationError;
+
         switch (action) {
             case 'open_panel':
                 return await this.openPreferencesPanel(args.tab);
@@ -195,6 +226,11 @@ class PreferencesTools {
     }
     async handlePreferencesQuery(args) {
         const { action } = args;
+
+        // Validate required parameters
+        const validationError = this.validateActionParameters(args, action);
+        if (validationError) return validationError;
+
         switch (action) {
             case 'get_all':
                 return await this.getAllPreferences(args.scope, args.categories);
@@ -208,6 +244,11 @@ class PreferencesTools {
     }
     async handlePreferencesBackup(args) {
         const { action } = args;
+
+        // Validate required parameters
+        const validationError = this.validateActionParameters(args, action);
+        if (validationError) return validationError;
+
         switch (action) {
             case 'export':
                 return await this.exportPreferences(args.categories, args.scope, args.includeDefaults);

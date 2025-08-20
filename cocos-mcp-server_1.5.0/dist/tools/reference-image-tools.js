@@ -452,9 +452,41 @@ class ReferenceImageTools {
             }
         });
     }
+    /**
+     * Validate required parameters for specific actions
+     * @param {Object} args - Arguments to validate
+     * @param {string} action - Action being performed
+     * @returns {Object|null} - Error object if validation fails, null if valid
+     */
+    validateActionParameters(args, action) {
+        const requiredParams = {
+            'add': ['paths'],
+            'switch': ['path'],
+            'set_position': ['x', 'y'],
+            'set_scale': ['sx', 'sy'],
+            'set_opacity': ['opacity'],
+            'set_data': ['key', 'value']
+        };
+
+        const required = requiredParams[action];
+        if (!required) return null; // No specific requirements
+
+        for (const param of required) {
+            if (args[param] === undefined || args[param] === null) {
+                return { success: false, error: `Missing required parameter: ${param} for action: ${action}` };
+            }
+        }
+        return null; // Valid
+    }
+
     // New handler methods for optimized tools
     async handleImageManagement(args) {
         const { action } = args;
+
+        // Validate required parameters
+        const validationError = this.validateActionParameters(args, action);
+        if (validationError) return validationError;
+
         switch (action) {
             case 'add':
                 return await this.addReferenceImage(args.paths);
@@ -483,6 +515,11 @@ class ReferenceImageTools {
     }
     async handleImageTransform(args) {
         const { action } = args;
+
+        // Validate required parameters
+        const validationError = this.validateActionParameters(args, action);
+        if (validationError) return validationError;
+
         switch (action) {
             case 'set_position':
                 return await this.setReferenceImagePosition(args.x, args.y);

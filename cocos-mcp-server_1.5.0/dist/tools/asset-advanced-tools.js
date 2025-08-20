@@ -354,9 +354,40 @@ class AssetAdvancedTools {
                 throw new Error(`Unknown tool: ${toolName}`);
         }
     }
+    /**
+     * Validate required parameters for specific actions
+     * @param {Object} args - Arguments to validate
+     * @param {string} action - Action being performed
+     * @returns {Object|null} - Error object if validation fails, null if valid
+     */
+    validateActionParameters(args, action) {
+        const requiredParams = {
+            'import': ['assets'],
+            'delete': ['urls'],
+            'save_meta': ['urlOrUUID', 'content'],
+            'generate_url': ['url'],
+            'dependencies': ['url']
+        };
+
+        const required = requiredParams[action];
+        if (!required) return null; // No specific requirements
+
+        for (const param of required) {
+            if (args[param] === undefined || args[param] === null) {
+                return { success: false, error: `Missing required parameter: ${param} for action: ${action}` };
+            }
+        }
+        return null; // Valid
+    }
+
     // 新的整合处理函数
     async handleAssetManage(args) {
         const { action } = args;
+
+        // Validate required parameters
+        const validationError = this.validateActionParameters(args, action);
+        if (validationError) return validationError;
+
         switch (action) {
             case 'import':
                 return await this.batchImportAssets(args.assets, args.overwrite);
@@ -372,6 +403,11 @@ class AssetAdvancedTools {
     }
     async handleAssetAnalyze(args) {
         const { action } = args;
+
+        // Validate required parameters
+        const validationError = this.validateActionParameters(args, action);
+        if (validationError) return validationError;
+
         switch (action) {
             // case 'validate_refs': // COMMENTED OUT - Requires complex project analysis
             //     return await this.validateAssetReferences(args.folder);

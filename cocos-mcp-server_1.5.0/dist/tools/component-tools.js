@@ -310,8 +310,36 @@ class ComponentTools {
                 return { success: false, error: `Unknown script action: ${action}` };
         }
     }
+    /**
+     * Validate required parameters for specific actions
+     * @param {Object} args - Arguments to validate
+     * @param {string} action - Action being performed
+     * @returns {Object|null} - Error object if validation fails, null if valid
+     */
+    validateActionParameters(args, action) {
+        const requiredParams = {
+            'list': ['nodeUuid'],
+            'info': ['nodeUuid', 'componentType']
+        };
+
+        const required = requiredParams[action];
+        if (!required) return null; // No specific requirements
+
+        for (const param of required) {
+            if (args[param] === undefined || args[param] === null) {
+                return { success: false, error: `Missing required parameter: ${param} for action: ${action}` };
+            }
+        }
+        return null; // Valid
+    }
+
     async handleComponentQuery(args) {
         const { action, nodeUuid, componentType, category } = args;
+
+        // Validate required parameters
+        const validationError = this.validateActionParameters(args, action);
+        if (validationError) return validationError;
+
         switch (action) {
             case 'list':
                 return await this.getComponents(nodeUuid);
